@@ -1,0 +1,173 @@
+// Prisma schema for LBRS
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Roles
+enum UserRole {
+  MEMBER
+  LIBRARIAN
+  ADMIN
+}
+
+// Book Copy Status
+enum CopyStatus {
+  AVAILABLE
+  BORROWED
+  RESERVED
+  MAINTENANCE
+}
+
+// Borrowing Status
+enum BorrowingStatus {
+  PENDING
+  APPROVED
+  RETURNED
+  OVERDUE
+  REJECTED
+}
+
+// Reservation Status
+enum ReservationStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Members table
+model Member {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  firstName   String   @map("first_name")
+  lastName    String   @map("last_name")
+  phone       String?
+  address     String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  borrowings   Borrowing[]
+  reservations Reservation[]
+
+  @@map("members")
+}
+
+// Librarians table
+model Librarian {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  phone     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("librarians")
+}
+
+// Admin Users table
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_users")
+}
+
+// Categories table
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  books Book[]
+
+  @@map("categories")
+}
+
+// Books table
+model Book {
+  id          String   @id @default(uuid())
+  title       String
+  author      String
+  isbn        String   @unique
+  description String?
+  categoryId  String   @map("category_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category    Category    @relation(fields: [categoryId], references: [id])
+  bookCopies  BookCopy[]
+  reservations Reservation[]
+
+  @@map("books")
+}
+
+// Book Copies table
+model BookCopy {
+  id          String     @id @default(uuid())
+  bookId      String     @map("book_id")
+  copyNumber  Int        @map("copy_number")
+  status      CopyStatus @default(AVAILABLE)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  book       Book        @relation(fields: [bookId], references: [id])
+  borrowings Borrowing[]
+
+  @@unique([bookId, copyNumber])
+  @@map("book_copies")
+}
+
+// Borrowings table
+model Borrowing {
+  id              String         @id @default(uuid())
+  memberId        String         @map("member_id")
+  bookCopyId      String         @map("book_copy_id")
+  status          BorrowingStatus @default(PENDING)
+  borrowDate      DateTime?      @map("borrow_date")
+  dueDate         DateTime?      @map("due_date")
+  returnDate      DateTime?      @map("return_date")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  member   Member    @relation(fields: [memberId], references: [id])
+  bookCopy BookCopy  @relation(fields: [bookCopyId], references: [id])
+
+  @@map("borrowings")
+}
+
+// Reservations table
+model Reservation {
+  id            String           @id @default(uuid())
+  memberId      String           @map("member_id")
+  bookId        String           @map("book_id")
+  status        ReservationStatus @default(PENDING)
+  queuePosition Int              @default(1) @map("queue_position")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  fulfilledAt   DateTime?        @map("fulfilled_at")
+
+  member Member @relation(fields: [memberId], references: [id])
+  book   Book   @relation(fields: [bookId], references: [id])
+
+  @@unique([memberId, bookId, status])
+  @@map("reservations")
+}
+
