@@ -9,7 +9,10 @@
     "dev": "nodemon src/app.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node src/prisma/seed.js"
+    "prisma:seed": "node src/prisma/seed.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": ["library", "borrowing", "reservation"],
   "author": "",
@@ -25,7 +28,10 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
-    "prisma": "^5.7.1"
+    "prisma": "^5.7.1",
+    "vitest": "^1.0.4",
+    "supertest": "^6.3.3",
+    "@vitest/coverage-v8": "^1.0.4"
   },
   "prisma": {
     "seed": "node src/prisma/seed.js"
